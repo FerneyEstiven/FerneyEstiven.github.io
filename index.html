@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sensor de Geometría Sci-Fi</title>
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            background-color: #05050a;
+            color: #00ffcc;
+            font-family: 'Share Tech Mono', monospace;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            box-sizing: border-box;
+        }
+        .geo-rep {
+            width: 100%;
+            max-width: 1100px;
+            border-radius: 16px;
+            overflow: hidden;
+            background: #05050a;
+            border: 1px solid rgba(0, 255, 204, 0.3);
+            box-shadow: 0 0 30px rgba(0, 255, 204, 0.15);
+            text-align: left;
+        }
+        .sci-title {
+            font-family: 'Orbitron', sans-serif;
+            letter-spacing: 1px;
+        }
+        .header {
+            padding: 24px 32px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid rgba(0, 255, 204, 0.2);
+            background: rgba(0, 255, 204, 0.03);
+        }
+        .body-content {
+            padding: 32px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+        .video-container {
+            width: 100%;
+            max-width: 600px;
+            position: relative;
+            border-radius: 12px;
+            overflow: hidden;
+            background: #000;
+            border: 1px solid rgba(0, 255, 204, 0.4);
+            box-shadow: 0 0 20px rgba(0,255,204,0.1);
+        }
+        video {
+            width: 100%;
+            display: block;
+            border-radius: 12px;
+        }
+        .scan-box {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%,-50%);
+            width: 65%;
+            height: 65%;
+            border: 2px dashed rgba(0, 255, 204, 0.8);
+            border-radius: 8px;
+            pointer-events: none;
+            box-shadow: 0 0 0 2000px rgba(0, 5, 10, 0.75);
+        }
+        button {
+            width: 100%;
+            max-width: 600px;
+            padding: 14px 20px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 13px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            color: #05050a;
+            background: #00ffcc;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            box-shadow: 0 0 20px rgba(0,255,204,0.4);
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        button:hover {
+            background: #ff007f;
+            color: #ffffff;
+            box-shadow: 0 0 25px rgba(255,0,127,0.6);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="geo-rep">
+        <div class="header">
+            <div>
+                <div class="sci-title" style="font-size: 20px; font-weight: 700; color: #00ffcc; text-shadow: 0 0 10px rgba(0,255,204,0.4);">[ SENSOR_CAM // INICIALIZADO ]</div>
+                <div style="font-size: 12px; color: #8892b0; margin-top: 4px;">Alinea el objetivo geométrico dentro del perímetro de escaneo</div>
+            </div>
+            <div style="font-size: 11px; color: #ff007f; border: 1px solid rgba(255,0,127,0.4); padding: 4px 10px; border-radius: 4px; background: rgba(255,0,127,0.05);">ONLINE</div>
+        </div>
+        <div class="body-content">
+            <div class="video-container">
+                <video id="video" autoplay playsinline></video>
+                <div class="scan-box"></div>
+            </div>
+            <button id="capture-btn">
+                <span>⚡</span> EJECUTAR CAPTURA ÓPTICA
+            </button>
+        </div>
+    </div>
+
+    <canvas id="canvas" style="display:none;"></canvas>
+
+    <script>
+        const video = document.getElementById('video');
+        const captureBtn = document.getElementById('capture-btn');
+        const canvas = document.getElementById('canvas');
+        let stream = null;
+
+        // Iniciar la cámara automáticamente al cargar la página
+        async function iniciarCamara() {
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
+                video.srcObject = stream;
+            } catch (err) {
+                alert("Error al acceder a la cámara: " + err);
+            }
+        }
+
+        iniciarCamara();
+
+        // Capturar la foto al hacer clic en el botón
+        captureBtn.onclick = () => {
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(video, 0, 0);
+
+            // Convertir a imagen base64 (puedes enviarla a un backend en Python/Flask/FastAPI si quieres procesarla con OpenCV)
+            const dataURL = canvas.toDataURL('image/jpeg', 0.85);
+            
+            // Ejemplo: detener cámara y mostrar la imagen capturada o enviarla
+            console.log("Imagen capturada en base64:", dataURL);
+            
+            // Si deseas detener la cámara tras capturar:
+            // stream.getVideoTracks()[0].stop();
+        };
+    </script>
+</body>
+</html>
