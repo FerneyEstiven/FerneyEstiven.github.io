@@ -57,7 +57,7 @@
             border: 1px solid rgba(0, 255, 204, 0.4);
             box-shadow: 0 0 20px rgba(0,255,204,0.1);
         }
-        video {
+        video, canvas {
             width: 100%;
             display: block;
             border-radius: 12px;
@@ -99,6 +99,17 @@
             color: #ffffff;
             box-shadow: 0 0 25px rgba(255,0,127,0.6);
         }
+        .resultado-panel {
+            display: none;
+            width: 100%;
+            max-width: 600px;
+            text-align: center;
+            background: rgba(0, 255, 204, 0.05);
+            border: 1px solid rgba(0, 255, 204, 0.3);
+            border-radius: 12px;
+            padding: 20px;
+            box-sizing: border-box;
+        }
     </style>
 </head>
 <body>
@@ -111,8 +122,8 @@
             </div>
             <div style="font-size: 11px; color: #ff007f; border: 1px solid rgba(255,0,127,0.4); padding: 4px 10px; border-radius: 4px; background: rgba(255,0,127,0.05);">ONLINE</div>
         </div>
-        <div class="body-content">
-            <div class="video-container">
+        <div class="body-content" id="main-content">
+            <div class="video-container" id="video-wrapper">
                 <video id="video" autoplay playsinline></video>
                 <div class="scan-box"></div>
             </div>
@@ -122,12 +133,11 @@
         </div>
     </div>
 
-    <canvas id="canvas" style="display:none;"></canvas>
-
     <script>
         const video = document.getElementById('video');
         const captureBtn = document.getElementById('capture-btn');
-        const canvas = document.getElementById('canvas');
+        const mainContent = document.getElementById('main-content');
+        const videoWrapper = document.getElementById('video-wrapper');
         let stream = null;
 
         // Iniciar la cámara automáticamente al cargar la página
@@ -144,19 +154,27 @@
 
         // Capturar la foto al hacer clic en el botón
         captureBtn.onclick = () => {
+            const canvas = document.createElement('canvas');
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
             const ctx = canvas.getContext('2d');
             ctx.drawImage(video, 0, 0);
 
-            // Convertir a imagen base64 (puedes enviarla a un backend en Python/Flask/FastAPI si quieres procesarla con OpenCV)
-            const dataURL = canvas.toDataURL('image/jpeg', 0.85);
-            
-            // Ejemplo: detener cámara y mostrar la imagen capturada o enviarla
-            console.log("Imagen capturada en base64:", dataURL);
-            
-            // Si deseas detener la cámara tras capturar:
-            // stream.getVideoTracks()[0].stop();
+            // Detener la cámara
+            if (stream) {
+                stream.getVideoTracks()[0].stop();
+            }
+
+            // Ocultar video y botón, mostrar la foto tomada
+            mainContent.innerHTML = `
+                <div style="font-family: 'Orbitron', sans-serif; font-size: 16px; color: #00ffcc; margin-bottom: 10px;">[ CAPTURA ÓPTICA EXITOSA ]</div>
+                <div style="width: 100%; max-width: 600px; border-radius: 12px; overflow: hidden; border: 1px solid rgba(0, 255, 204, 0.4); box-shadow: 0 0 20px rgba(0,255,204,0.1);">
+                    <img src="${canvas.toDataURL('image/jpeg', 0.85)}" style="width: 100%; display: block; border-radius: 12px;">
+                </div>
+                <button onclick="location.reload()" style="margin-top: 15px;">
+                    <span>🔄</span> NUEVO ESCANEO
+                </button>
+            `;
         };
     </script>
 </body>
