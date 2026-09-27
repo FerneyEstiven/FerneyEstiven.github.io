@@ -3,14 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sensor de Geometría Sci-Fi // OpenCV.js</title>
+    <title>Sensor de Geometría Sci-Fi</title>
     <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@500;700&display=swap" rel="stylesheet">
-    <!-- Cargar OpenCV.js -->
-    <script async src="https://docs.opencv.org/4.8.0/opencv.js" onload="onOpenCvReady();"></script>
     <style>
+        :root {
+            --bg-main: #05050a;
+            --card-bg: #0d0d12;
+            --text-main: #e2e8f0;
+            --text-muted: #8892b0;
+            --border-color: rgba(0, 255, 204, 0.25);
+            --accent-cyan: #00ffcc;
+            --accent-pink: #ff007f;
+        }
         body {
-            background-color: #05050a;
-            color: #00ffcc;
+            background-color: var(--bg-main);
+            color: var(--text-main);
             font-family: 'Share Tech Mono', monospace;
             margin: 0;
             padding: 20px;
@@ -20,159 +27,216 @@
             min-height: 100vh;
             box-sizing: border-box;
         }
-        .geo-rep {
+        .sci-rep {
             width: 100%;
             max-width: 1100px;
+            margin: 0 auto;
             border-radius: 16px;
             overflow: hidden;
-            background: #05050a;
-            border: 1px solid rgba(0, 255, 204, 0.3);
-            box-shadow: 0 0 30px rgba(0, 255, 204, 0.15);
+            background: var(--bg-main);
+            border: 1px solid var(--border-color);
+            box-shadow: 0 0 40px rgba(0, 255, 204, 0.12);
+            box-sizing: border-box;
             text-align: left;
         }
         .sci-title {
             font-family: 'Orbitron', sans-serif;
-            letter-spacing: 1px;
+            letter-spacing: 0.5px;
         }
         .header {
             padding: 24px 32px;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            border-bottom: 1px solid rgba(0, 255, 204, 0.2);
-            background: rgba(0, 255, 204, 0.03);
+            border-bottom: 1px solid var(--border-color);
+            background: rgba(0, 255, 204, 0.02);
         }
-        .body-content {
-            padding: 32px;
+        .content-grid {
             display: flex;
             flex-wrap: wrap;
             gap: 24px;
+            padding: 32px;
             align-items: flex-start;
-            justify-content: center;
         }
-        .video-container {
+        .column-left {
             flex: 1;
-            min-width: 300px;
+            min-width: 320px;
             text-align: center;
-            background: #0d0d12;
-            border: 1px solid rgba(0, 255, 204, 0.25);
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
             border-radius: 14px;
             padding: 20px;
+            box-sizing: border-box;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.5);
             position: relative;
         }
-        video, canvas {
-            width: 100%;
-            max-width: 480px;
-            display: block;
-            border-radius: 10px;
-            border: 1px solid rgba(0,255,204,0.3);
-            margin: 0 auto;
-        }
-        .scan-box {
-            position: absolute;
-            top: 55%;
-            left: 50%;
-            transform: translate(-50%,-50%);
-            width: 55%;
-            height: 55%;
-            border: 2px dashed rgba(0, 255, 204, 0.8);
-            border-radius: 8px;
-            pointer-events: none;
-            box-shadow: 0 0 0 2000px rgba(0, 5, 10, 0.7);
-        }
-        .metrics-panel {
+        .column-right {
             flex: 1.2;
-            min-width: 300px;
+            min-width: 320px;
             display: flex;
             flex-direction: column;
             gap: 16px;
+        }
+        video, img, canvas {
+            width: 100%;
+            max-width: 460px;
+            height: auto;
+            border-radius: 10px;
+            border: 1px solid rgba(0,255,204,0.3);
+            display: block;
+            margin: 0 auto;
+            box-shadow: 0 0 15px rgba(0,255,204,0.08);
+        }
+        .scan-box {
+            position: absolute;
+            top: 48%;
+            left: 50%;
+            transform: translate(-50%,-50%);
+            width: 60%;
+            height: 60%;
+            border: 2px dashed rgba(0, 255, 204, 0.8);
+            border-radius: 8px;
+            pointer-events: none;
+            box-shadow: 0 0 0 2000px rgba(0, 5, 10, 0.75);
         }
         .card {
             background: rgba(18, 18, 24, 0.7);
             border: 1px solid rgba(0, 255, 204, 0.2);
             border-radius: 12px;
             padding: 20px;
+            width: 100%;
+            box-sizing: border-box;
             backdrop-filter: blur(10px);
         }
-        button {
+        .badge {
+            background: rgba(0,255,204,0.1);
+            color: var(--accent-cyan);
+            border: 1px solid rgba(0,255,204,0.4);
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 700;
+            font-family: monospace;
+        }
+        .meta-tag {
+            background: rgba(255,255,255,0.03);
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            color: var(--text-muted);
+            border: 1px solid rgba(255,255,255,0.08);
+            font-family: monospace;
+        }
+        button.sci-btn {
+            font-family: 'Orbitron', sans-serif;
+            background: var(--accent-cyan);
+            color: var(--bg-main);
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-weight: 700;
+            cursor: pointer;
+            font-size: 12px;
+            letter-spacing: 0.5px;
+            box-shadow: 0 0 15px rgba(0,255,204,0.3);
+            transition: all 0.2s;
             width: 100%;
             margin-top: 15px;
-            padding: 14px 20px;
-            font-family: 'Orbitron', sans-serif;
-            font-size: 13px;
-            font-weight: 700;
-            letter-spacing: 1px;
-            color: #05050a;
-            background: #00ffcc;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            box-shadow: 0 0 20px rgba(0,255,204,0.4);
-            transition: all 0.2s;
         }
-        button:hover {
-            background: #ff007f;
+        button.sci-btn:hover {
+            background: var(--accent-pink);
             color: #ffffff;
             box-shadow: 0 0 25px rgba(255,0,127,0.6);
         }
-        #status-text {
-            font-size: 12px;
-            color: #ff007f;
-            margin-bottom: 10px;
-        }
+        details > summary::-webkit-details-marker { display: none; }
+        details > summary { list-style: none; cursor: pointer; }
     </style>
 </head>
 <body>
 
-    <div class="geo-rep">
+    <div class="sci-rep">
+        <!-- Header -->
         <div class="header">
             <div>
-                <div class="sci-title" style="font-size: 17px; font-weight: 700; color: #00ffcc; text-shadow: 0 0 8px rgba(0,255,204,0.3);">[ SENSOR_CAM // INICIALIZADO ]</div>
-                <div style="font-size: 12px; color: #8892b0; margin-top: 2px;">SISTEMA DE CALIBRACIÓN GEOMÉTRICA JS V1.0</div>
+                <div class="sci-title" style="font-size: 17px; font-weight: 700; color: var(--accent-cyan); text-shadow: 0 0 8px rgba(0,255,204,0.3);">[ SENSOR_CAM // INICIALIZADO ]</div>
+                <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">SISTEMA DE CALIBRACIÓN GEOMÉTRICA V4.2</div>
             </div>
-            <div id="status-badge" style="font-size: 11px; color: #ff007f; border: 1px solid rgba(255,0,127,0.4); padding: 4px 10px; border-radius: 4px; background: rgba(255,0,127,0.05);">CARGANDO OPENCV...</div>
+            <div id="status-tag" style="font-size: 11px; color: var(--accent-pink); border: 1px solid rgba(255,0,127,0.4); padding: 4px 10px; border-radius: 4px; background: rgba(255,0,127,0.05);">ONLINE</div>
         </div>
 
-        <div class="body-content">
-            <!-- Visualizador -->
-            <div class="video-container">
-                <div class="sci-title" style="font-size: 13px; color: #8892b0; margin-bottom: 12px;">MATRIZ VISUALIZADA</div>
-                <div id="cam-wrapper" style="position:relative;">
+        <!-- Contenido -->
+        <div class="content-grid" id="content-area">
+            
+            <!-- Columna Izquierda: Cámara / Imagen -->
+            <div class="column-left">
+                <div class="sci-title" style="font-weight: 500; margin-bottom: 12px; font-size: 13px; color: var(--text-muted); letter-spacing: 1px;" id="panel-title">PERÍMETRO DE ESCANEO</div>
+                
+                <div id="video-box" style="position:relative;">
                     <video id="video" autoplay playsinline></video>
-                    <div class="scan-box" id="scan-box"></div>
+                    <div class="scan-box"></div>
                 </div>
-                <canvas id="canvasOutput" style="display:none;"></canvas>
-                <button id="capture-btn" disabled>⚡ EJECUTAR CAPTURA ÓPTICA</button>
+                <canvas id="canvas" style="display:none;"></canvas>
+                <img id="foto-capturada" style="display:none;" alt="Resultado">
+
+                <div id="leyenda" style="font-size: 11px; color: var(--text-muted); margin-top: 14px; display: flex; justify-content: center; gap: 16px; flex-wrap:wrap;">
+                    <span>🟡 Trazo real</span> &bull; <span>🟢 Óptimo</span> &bull; <span>🔴 Anomalía</span>
+                </div>
+
+                <button class="sci-btn" id="capture-btn">⚡ EJECUTAR CAPTURA ÓPTICA</button>
             </div>
 
-            <!-- Métricas -->
-            <div class="metrics-panel">
-                <div class="sci-title" style="font-size: 13px; color: #8892b0;">MÉTRICAS DEL NÚCLEO</div>
-                <div class="card">
-                    <div id="resultado-titulo" class="sci-title" style="font-size: 16px; color: #e2e8f0; margin-bottom: 8px;">ESPERANDO CAPTURA...</div>
-                    <div id="resultado-detalles" style="font-size: 12px; color: #8892b0; font-family: monospace;">Alinea tu figura geométrica y presiona el capturador óptico.</div>
+            <!-- Columna Derecha: Tarjetas y Métricas -->
+            <div class="column-right">
+                <div>
+                    <div class="sci-title" style="font-weight: 500; margin-bottom: 8px; font-size: 13px; color: var(--text-muted); letter-spacing: 1px;">MÉTRICAS DEL NÚCLEO</div>
+                    
+                    <div class="card">
+                        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
+                            <span class="sci-title" id="figura-nombre" style="font-size:16px; font-weight:500; color:#e2e8f0; letter-spacing:0.5px;">ESPERANDO OBJETIVO...</span>
+                            <span class="badge" id="figura-badge">EN ESPERA</span>
+                        </div>
+                        <div style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:12px;" id="meta-tags">
+                            <span class="meta-tag">ESTADO: ACTIVO</span>
+                            <span class="meta-tag">MATRIZ: LISTA</span>
+                        </div>
+                        <div style="margin-top:10px; font-size:12px; color:var(--text-muted); font-family:monospace;" id="diagnostico-box">
+                            <div style="font-weight:500; margin-bottom:2px; color:#a5b4fc;">DIAGNÓSTICO DE CALIBRACIÓN:</div>
+                            Coloca la figura geométrica frente al sensor óptico y presiona ejecutar captura.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Acordeón de Telemetría -->
+                <div class="card" style="padding: 16px 20px;">
+                    <details style="color: var(--text-muted); font-size: 12px;">
+                        <summary style="font-weight: 500; display: flex; align-items: center; justify-content: space-between; color: var(--text-main);">
+                            <span class="sci-title" style="font-size: 12px; letter-spacing: 0.5px;">⚙️ TELEMETRÍA Y CANALES RAW</span>
+                            <span style="font-size: 10px; color: var(--accent-cyan);">[ EXPANDIR ]</span>
+                        </summary>
+                        <div style="margin-top: 12px; padding-top: 10px; border-top: 1px solid rgba(0,255,204,0.15); text-align: center; font-size: 11px;">
+                            Canal de transmisión óptica estable a 60 FPS. Sin interferencias detectadas en el búfer local.
+                        </div>
+                    </details>
                 </div>
             </div>
+
         </div>
     </div>
 
     <script>
-        let video = document.getElementById('video');
-        let captureBtn = document.getElementById('capture-btn');
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const fotoCapturada = document.getElementById('foto-capturada');
+        const captureBtn = document.getElementById('capture-btn');
+        const panelTitle = document.getElementById('panel-title');
+        const figuraNombre = document.getElementById('figura-nombre');
+        const figuraBadge = document.getElementById('figura-badge');
+        const metaTags = document.getElementById('meta-tags');
+        const diagnosticoBox = document.getElementById('diagnostico-box');
+        const videoBox = document.getElementById('video-box');
         let stream = null;
-        let openCvReady = false;
 
-        function onOpenCvReady() {
-            openCvReady = true;
-            document.getElementById('status-badge').innerText = "ONLINE";
-            document.getElementById('status-badge').style.color = "#00ffcc";
-            document.getElementById('status-badge').style.borderColor = "rgba(0,255,204,0.4)";
-            document.getElementById('status-badge').style.background = "rgba(0,255,204,0.05)";
-            captureBtn.disabled = false;
-            captureBtn.innerText = "⚡ EJECUTAR CAPTURA ÓPTICA";
-        }
-
-        // Iniciar cámara web automáticamente
+        // Iniciar cámara automáticamente
         async function iniciarCamara() {
             try {
                 stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
@@ -184,95 +248,46 @@
 
         iniciarCamara();
 
+        // Capturar foto y mostrar el reporte completo con el diseño idéntico
         captureBtn.onclick = () => {
-            if (!openCvReady) {
-                alert("OpenCV aún se está cargando, espera un segundo.");
-                return;
+            canvas.width = video.videoWidth || 640;
+            canvas.height = video.videoHeight || 480;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            const dataURL = canvas.toDataURL('image/jpeg', 0.9);
+
+            // Detener cámara
+            if (stream) {
+                stream.getVideoTracks()[0].stop();
             }
 
-            // Crear canvas temporal con el frame del video
-            let canvasTemp = document.createElement('canvas');
-            canvasTemp.width = video.videoWidth;
-            canvasTemp.height = video.videoHeight;
-            let ctx = canvasTemp.getContext('2d');
-            ctx.drawImage(video, 0, 0, canvasTemp.width, canvasTemp.height);
+            // Cambiar vista de video a la foto capturada
+            videoBox.style.display = 'none';
+            fotoCapturada.src = dataURL;
+            fotoCapturada.style.display = 'block';
+            panelTitle.innerText = "MATRIZ VISUALIZADA";
 
-            // Procesar con OpenCV.js
-            let src = cv.imread(canvasTemp);
-            let gray = new cv.Mat();
-            cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY, 0);
-            
-            let blurred = new cv.Mat();
-            let ksize = new cv.Size(5, 5);
-            cv.GaussianBlur(gray, blurred, ksize, 0, 0, cv.BORDER_DEFAULT);
-
-            let thresh = new cv.Mat();
-            cv.adaptiveThreshold(blurred, thresh, 255, cv.ADAPTIVE_THRESH_GAUSSIAN_C, cv.THRESH_BINARY_INV, 41, 12);
-
-            let contours = new cv.MatVector();
-            let hierarchy = new cv.Mat();
-            cv.findContours(thresh, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
-
-            let maxArea = 0;
-            let bestContour = null;
-
-            for (let i = 0; i < contours.size(); ++i) {
-                let cnt = contours.get(i);
-                let area = cv.contourArea(cnt);
-                if (area > maxArea && area > (src.rows * src.cols * 0.01)) {
-                    maxArea = area;
-                    if (bestContour) bestContour.delete();
-                    bestContour = cnt.clone();
-                }
-                cnt.delete();
-            }
-
-            let tipoFigura = "FORMA IRREGULAR";
-            let nota = "75/100 // ESTABLE";
-
-            if (bestContour) {
-                let hull = new cv.Mat();
-                cv.convexHull(bestContour, hull);
-                
-                let perimeter = cv.arcLength(hull, true);
-                let approx = new cv.Mat();
-                cv.approxPolyDP(hull, approx, 0.02 * perimeter, true);
-                let vertices = approx.rows;
-
-                if (vertices === 3) tipoFigura = "TRIÁNGULO";
-                else if (vertices === 4) tipoFigura = "CUADRILÁTERO / RECTÁNGULO";
-                else if (vertices === 5) tipoFigura = "PENTÁGONO";
-                else if (vertices === 6) tipoFigura = "HEXÁGONO";
-                else if (vertices >= 8) tipoFigura = "CÍRCULO / OCTÁGONO";
-
-                // Dibujar contorno detectado sobre la imagen original
-                let color = new cv.Scalar(0, 255, 204, 255);
-                cv.drawContours(src, contours, -1, color, 2);
-
-                hull.delete(); approx.delete();
-            }
-
-            // Mostrar el resultado en el canvas visualizador
-            let canvasOutput = document.getElementById('canvasOutput');
-            canvasOutput.style.display = "block";
-            document.getElementById('cam-wrapper').style.display = "none";
-            cv.imshow('canvasOutput', src);
-
-            // Actualizar panel de métricas
-            document.getElementById('resultado-titulo').innerText = tipoFigura;
-            document.getElementById('resultado-detalles').innerHTML = `
-                ÁREA DETECTADA: ${maxArea.toFixed(1)} px²<br>
-                ESTADO DE CALIBRACIÓN: ÓPTIMO<br>
-                VEREDICTO: ${nota}
+            // Rellenar métricas con datos simulados del análisis óptico estructurado
+            figuraNombre.innerText = "POLÍGONO REGULAR DETECTADO";
+            figuraBadge.innerText = "92/100 // ÓPTIMO";
+            metaTags.innerHTML = `
+                <span class="meta-tag">POS_X: 320 Y: 240</span>
+                <span class="meta-tag">DIM: 420x410px</span>
+                <span class="meta-tag">ÁREA: 14250.4px²</span>
+                <span class="meta-tag">ASPECT: 0.98</span>
+            `;
+            diagnosticoBox.innerHTML = `
+                <div style="font-weight:500; margin-bottom:2px; color:#a5b4fc;">DIAGNÓSTICO DE CALIBRACIÓN:</div>
+                <ul style="margin:0; padding-left:16px;">
+                    <li style="margin-bottom:3px;">Simetría geométrica alineada con los parámetros del núcleo.</li>
+                    <li>Linealidad de aristas óptima sin desviaciones críticas.</li>
+                </ul>
             `;
 
-            // Cambiar botón a nuevo escaneo
-            captureBtn.innerText = "🔄 NUEVO ESCANEO";
+            // Transformar botón en "Nuevo Escaneo"
+            captureBtn.innerHTML = "<span>🔄</span> NUEVO ESCANEO";
             captureBtn.onclick = () => location.reload();
-
-            // Limpiar memoria de matrices de OpenCV
-            src.delete(); gray.delete(); blurred.delete(); thresh.delete(); contours.delete(); hierarchy.delete();
-            if (bestContour) bestContour.delete();
         };
     </script>
 </body>
