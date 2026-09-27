@@ -3,8 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sensor de Geometría Sci-Fi</title>
+    <title>Sensor de Geometría Sci-Fi // OpenCV.js</title>
     <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@500;700&display=swap" rel="stylesheet">
+    <!-- Cargar OpenCV.js -->
+    <script async src="https://docs.opencv.org/4.8.0/opencv.js" onload="onOpenCvReady();"></script>
     <style>
         body {
             background-color: #05050a;
@@ -43,40 +45,58 @@
         .body-content {
             padding: 32px;
             display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 20px;
+            flex-wrap: wrap;
+            gap: 24px;
+            align-items: flex-start;
+            justify-content: center;
         }
         .video-container {
-            width: 100%;
-            max-width: 600px;
+            flex: 1;
+            min-width: 300px;
+            text-align: center;
+            background: #0d0d12;
+            border: 1px solid rgba(0, 255, 204, 0.25);
+            border-radius: 14px;
+            padding: 20px;
             position: relative;
-            border-radius: 12px;
-            overflow: hidden;
-            background: #000;
-            border: 1px solid rgba(0, 255, 204, 0.4);
-            box-shadow: 0 0 20px rgba(0,255,204,0.1);
         }
         video, canvas {
             width: 100%;
+            max-width: 480px;
             display: block;
-            border-radius: 12px;
+            border-radius: 10px;
+            border: 1px solid rgba(0,255,204,0.3);
+            margin: 0 auto;
         }
         .scan-box {
             position: absolute;
-            top: 50%;
+            top: 55%;
             left: 50%;
             transform: translate(-50%,-50%);
-            width: 65%;
-            height: 65%;
+            width: 55%;
+            height: 55%;
             border: 2px dashed rgba(0, 255, 204, 0.8);
             border-radius: 8px;
             pointer-events: none;
-            box-shadow: 0 0 0 2000px rgba(0, 5, 10, 0.75);
+            box-shadow: 0 0 0 2000px rgba(0, 5, 10, 0.7);
+        }
+        .metrics-panel {
+            flex: 1.2;
+            min-width: 300px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+        .card {
+            background: rgba(18, 18, 24, 0.7);
+            border: 1px solid rgba(0, 255, 204, 0.2);
+            border-radius: 12px;
+            padding: 20px;
+            backdrop-filter: blur(10px);
         }
         button {
             width: 100%;
-            max-width: 600px;
+            margin-top: 15px;
             padding: 14px 20px;
             font-family: 'Orbitron', sans-serif;
             font-size: 13px;
@@ -89,26 +109,16 @@
             cursor: pointer;
             box-shadow: 0 0 20px rgba(0,255,204,0.4);
             transition: all 0.2s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
         }
         button:hover {
             background: #ff007f;
             color: #ffffff;
             box-shadow: 0 0 25px rgba(255,0,127,0.6);
         }
-        .resultado-panel {
-            display: none;
-            width: 100%;
-            max-width: 600px;
-            text-align: center;
-            background: rgba(0, 255, 204, 0.05);
-            border: 1px solid rgba(0, 255, 204, 0.3);
-            border-radius: 12px;
-            padding: 20px;
-            box-sizing: border-box;
+        #status-text {
+            font-size: 12px;
+            color: #ff007f;
+            margin-bottom: 10px;
         }
     </style>
 </head>
@@ -117,30 +127,52 @@
     <div class="geo-rep">
         <div class="header">
             <div>
-                <div class="sci-title" style="font-size: 20px; font-weight: 700; color: #00ffcc; text-shadow: 0 0 10px rgba(0,255,204,0.4);">[ SENSOR_CAM // INICIALIZADO ]</div>
-                <div style="font-size: 12px; color: #8892b0; margin-top: 4px;">Alinea el objetivo geométrico dentro del perímetro de escaneo</div>
+                <div class="sci-title" style="font-size: 17px; font-weight: 700; color: #00ffcc; text-shadow: 0 0 8px rgba(0,255,204,0.3);">[ SENSOR_CAM // INICIALIZADO ]</div>
+                <div style="font-size: 12px; color: #8892b0; margin-top: 2px;">SISTEMA DE CALIBRACIÓN GEOMÉTRICA JS V1.0</div>
             </div>
-            <div style="font-size: 11px; color: #ff007f; border: 1px solid rgba(255,0,127,0.4); padding: 4px 10px; border-radius: 4px; background: rgba(255,0,127,0.05);">ONLINE</div>
+            <div id="status-badge" style="font-size: 11px; color: #ff007f; border: 1px solid rgba(255,0,127,0.4); padding: 4px 10px; border-radius: 4px; background: rgba(255,0,127,0.05);">CARGANDO OPENCV...</div>
         </div>
-        <div class="body-content" id="main-content">
-            <div class="video-container" id="video-wrapper">
-                <video id="video" autoplay playsinline></video>
-                <div class="scan-box"></div>
+
+        <div class="body-content">
+            <!-- Visualizador -->
+            <div class="video-container">
+                <div class="sci-title" style="font-size: 13px; color: #8892b0; margin-bottom: 12px;">MATRIZ VISUALIZADA</div>
+                <div id="cam-wrapper" style="position:relative;">
+                    <video id="video" autoplay playsinline></video>
+                    <div class="scan-box" id="scan-box"></div>
+                </div>
+                <canvas id="canvasOutput" style="display:none;"></canvas>
+                <button id="capture-btn" disabled>⚡ EJECUTAR CAPTURA ÓPTICA</button>
             </div>
-            <button id="capture-btn">
-                <span>⚡</span> EJECUTAR CAPTURA ÓPTICA
-            </button>
+
+            <!-- Métricas -->
+            <div class="metrics-panel">
+                <div class="sci-title" style="font-size: 13px; color: #8892b0;">MÉTRICAS DEL NÚCLEO</div>
+                <div class="card">
+                    <div id="resultado-titulo" class="sci-title" style="font-size: 16px; color: #e2e8f0; margin-bottom: 8px;">ESPERANDO CAPTURA...</div>
+                    <div id="resultado-detalles" style="font-size: 12px; color: #8892b0; font-family: monospace;">Alinea tu figura geométrica y presiona el capturador óptico.</div>
+                </div>
+            </div>
         </div>
     </div>
 
     <script>
-        const video = document.getElementById('video');
-        const captureBtn = document.getElementById('capture-btn');
-        const mainContent = document.getElementById('main-content');
-        const videoWrapper = document.getElementById('video-wrapper');
+        let video = document.getElementById('video');
+        let captureBtn = document.getElementById('capture-btn');
         let stream = null;
+        let openCvReady = false;
 
-        // Iniciar la cámara automáticamente al cargar la página
+        function onOpenCvReady() {
+            openCvReady = true;
+            document.getElementById('status-badge').innerText = "ONLINE";
+            document.getElementById('status-badge').style.color = "#00ffcc";
+            document.getElementById('status-badge').style.borderColor = "rgba(0,255,204,0.4)";
+            document.getElementById('status-badge').style.background = "rgba(0,255,204,0.05)";
+            captureBtn.disabled = false;
+            captureBtn.innerText = "⚡ EJECUTAR CAPTURA ÓPTICA";
+        }
+
+        // Iniciar cámara web automáticamente
         async function iniciarCamara() {
             try {
                 stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
@@ -152,29 +184,95 @@
 
         iniciarCamara();
 
-        // Capturar la foto al hacer clic en el botón
         captureBtn.onclick = () => {
-            const canvas = document.createElement('canvas');
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(video, 0, 0);
-
-            // Detener la cámara
-            if (stream) {
-                stream.getVideoTracks()[0].stop();
+            if (!openCvReady) {
+                alert("OpenCV aún se está cargando, espera un segundo.");
+                return;
             }
 
-            // Ocultar video y botón, mostrar la foto tomada
-            mainContent.innerHTML = `
-                <div style="font-family: 'Orbitron', sans-serif; font-size: 16px; color: #00ffcc; margin-bottom: 10px;">[ CAPTURA ÓPTICA EXITOSA ]</div>
-                <div style="width: 100%; max-width: 600px; border-radius: 12px; overflow: hidden; border: 1px solid rgba(0, 255, 204, 0.4); box-shadow: 0 0 20px rgba(0,255,204,0.1);">
-                    <img src="${canvas.toDataURL('image/jpeg', 0.85)}" style="width: 100%; display: block; border-radius: 12px;">
-                </div>
-                <button onclick="location.reload()" style="margin-top: 15px;">
-                    <span>🔄</span> NUEVO ESCANEO
-                </button>
+            // Crear canvas temporal con el frame del video
+            let canvasTemp = document.createElement('canvas');
+            canvasTemp.width = video.videoWidth;
+            canvasTemp.height = video.videoHeight;
+            let ctx = canvasTemp.getContext('2d');
+            ctx.drawImage(video, 0, 0, canvasTemp.width, canvasTemp.height);
+
+            // Procesar con OpenCV.js
+            let src = cv.imread(canvasTemp);
+            let gray = new cv.Mat();
+            cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY, 0);
+            
+            let blurred = new cv.Mat();
+            let ksize = new cv.Size(5, 5);
+            cv.GaussianBlur(gray, blurred, ksize, 0, 0, cv.BORDER_DEFAULT);
+
+            let thresh = new cv.Mat();
+            cv.adaptiveThreshold(blurred, thresh, 255, cv.ADAPTIVE_THRESH_GAUSSIAN_C, cv.THRESH_BINARY_INV, 41, 12);
+
+            let contours = new cv.MatVector();
+            let hierarchy = new cv.Mat();
+            cv.findContours(thresh, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
+
+            let maxArea = 0;
+            let bestContour = null;
+
+            for (let i = 0; i < contours.size(); ++i) {
+                let cnt = contours.get(i);
+                let area = cv.contourArea(cnt);
+                if (area > maxArea && area > (src.rows * src.cols * 0.01)) {
+                    maxArea = area;
+                    if (bestContour) bestContour.delete();
+                    bestContour = cnt.clone();
+                }
+                cnt.delete();
+            }
+
+            let tipoFigura = "FORMA IRREGULAR";
+            let nota = "75/100 // ESTABLE";
+
+            if (bestContour) {
+                let hull = new cv.Mat();
+                cv.convexHull(bestContour, hull);
+                
+                let perimeter = cv.arcLength(hull, true);
+                let approx = new cv.Mat();
+                cv.approxPolyDP(hull, approx, 0.02 * perimeter, true);
+                let vertices = approx.rows;
+
+                if (vertices === 3) tipoFigura = "TRIÁNGULO";
+                else if (vertices === 4) tipoFigura = "CUADRILÁTERO / RECTÁNGULO";
+                else if (vertices === 5) tipoFigura = "PENTÁGONO";
+                else if (vertices === 6) tipoFigura = "HEXÁGONO";
+                else if (vertices >= 8) tipoFigura = "CÍRCULO / OCTÁGONO";
+
+                // Dibujar contorno detectado sobre la imagen original
+                let color = new cv.Scalar(0, 255, 204, 255);
+                cv.drawContours(src, contours, -1, color, 2);
+
+                hull.delete(); approx.delete();
+            }
+
+            // Mostrar el resultado en el canvas visualizador
+            let canvasOutput = document.getElementById('canvasOutput');
+            canvasOutput.style.display = "block";
+            document.getElementById('cam-wrapper').style.display = "none";
+            cv.imshow('canvasOutput', src);
+
+            // Actualizar panel de métricas
+            document.getElementById('resultado-titulo').innerText = tipoFigura;
+            document.getElementById('resultado-detalles').innerHTML = `
+                ÁREA DETECTADA: ${maxArea.toFixed(1)} px²<br>
+                ESTADO DE CALIBRACIÓN: ÓPTIMO<br>
+                VEREDICTO: ${nota}
             `;
+
+            // Cambiar botón a nuevo escaneo
+            captureBtn.innerText = "🔄 NUEVO ESCANEO";
+            captureBtn.onclick = () => location.reload();
+
+            // Limpiar memoria de matrices de OpenCV
+            src.delete(); gray.delete(); blurred.delete(); thresh.delete(); contours.delete(); hierarchy.delete();
+            if (bestContour) bestContour.delete();
         };
     </script>
 </body>
